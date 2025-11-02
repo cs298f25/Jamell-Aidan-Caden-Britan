@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Hosting</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='authorization/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <div class="user-avatar">👤</div>
+                <h1>User</h1>
+            </div>
+            <button class="logout-btn">Logout</button>
+        </header>
+
+        <main>
+            <div class="buttons">
+                <button id="upload-btn">Upload Image</button>
+                <button id="view-btn">View Images</button>
+                <button id="delete-btn">Delete Image</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='authorization/script.js') }}"></script>
+</body>
+</html>
