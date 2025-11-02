@@ -2,6 +2,7 @@
 html, body {
 	height: 100%;
 	margin: 0;
+    background: #0f172a
 }
 
 
@@ -29,6 +30,7 @@ h1#site-title {
 	margin: 0 0 1rem 0;
 	font-size: 1.5rem;
 	font-weight: 600;
+    color: #fff;
 }
 
 /* Login button */
@@ -40,7 +42,7 @@ h1#site-title {
 	border: 0;
 	border-radius: 6px;
 	cursor: pointer;
-	background: #111;
+	background: #475569;
 	color: #fff;
 }
 
