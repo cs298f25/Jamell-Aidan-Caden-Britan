@@ -1,0 +1,51 @@
+
+html, body {
+	height: 100%;
+	margin: 0;
+}
+
+
+.wrap {
+	min-height: 100vh;           /* full viewport height */
+	display: flex;
+	align-items: center;         /* vertical centering */
+	justify-content: center;     /* horizontal centering */
+	padding: 1.5rem;
+	box-sizing: border-box;
+}
+
+/* Card containing the title and button - simple neutral defaults */
+.card {
+	width: 100%;
+	max-width: 420px;
+	padding: 1.5rem;
+	box-sizing: border-box;
+	background: transparent; 
+	border-radius: 8px;
+	text-align: center;
+}
+
+h1#site-title {
+	margin: 0 0 1rem 0;
+	font-size: 1.5rem;
+	font-weight: 600;
+}
+
+/* Login button */
+#login-btn {
+	display: inline-block;
+	width: 100%;
+	padding: 0.75rem 1rem;
+	font-size: 1rem;
+	border: 0;
+	border-radius: 6px;
+	cursor: pointer;
+	background: #111;
+	color: #fff;
+}
+
+
+@media (max-width: 420px) {
+	.card { padding: 1rem; }
+	h1#site-title { font-size: 1.25rem; }
+}
