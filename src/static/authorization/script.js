@@ -1,10 +1,11 @@
 const uploadBtn = document.getElementById('upload-btn');
+const fileInput = document.getElementById('file-input');
 const viewBtn = document.getElementById('view-btn');
 const deleteBtn = document.getElementById('delete-btn');
 
-// Upload button - navigate to user images page
+// upload button - open file input
 uploadBtn.onclick = () => {
-    window.location.href = '/auth';
+    fileInput.click();
 };
 
 // View button - navigate to user images page
