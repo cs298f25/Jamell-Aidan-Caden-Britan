@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Image Links</title>
+  </head>
+  <body>
+    <h1>Image Links</h1>
+    <p><a href="/gallery">View images</a></p>
+    <ul>
+      {% for url in images %}
+      <li>
+        <a href="{{ url }}">{{ url }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </body>
+  </html>
