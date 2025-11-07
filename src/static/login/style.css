@@ -33,6 +33,29 @@ h1#site-title {
     color: #fff;
 }
 
+/* Username input */
+#username-input {
+	display: inline-block;
+	width: 100%;
+	padding: 0.75rem 1rem;
+	font-size: 1rem;
+	border: 0;
+	border-radius: 6px;
+	margin-bottom: 1rem;
+	background: #1e293b;
+	color: #fff;
+	box-sizing: border-box;
+}
+
+#username-input::placeholder {
+	color: #94a3b8;
+}
+
+#username-input:focus {
+	outline: none;
+	background: #334155;
+}
+
 /* Login button */
 #login-btn {
 	display: inline-block;

@@ -10,7 +10,7 @@ uploadBtn.onclick = () => {
 
 // View button - navigate to user images page
 viewBtn.onclick = () => {
-    window.location.href = '/auth';
+    window.location.href = '/images';
 };
 
 // Delete button - navigate to user images page (can delete there)
