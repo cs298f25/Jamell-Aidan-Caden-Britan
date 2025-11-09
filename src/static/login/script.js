@@ -1,7 +1,16 @@
 const loginButton = document.getElementById('login-btn');
+const usernameInput = document.getElementById('username-input');
 
-// event listener to handle login
+// Handle login button click
 loginButton.addEventListener('click', function() {
-    // You can replace this URL with actual login endpoint
-    window.location.href = '/login';
+    const username = usernameInput.value.trim();
+    
+    // Check if username is empty
+    if (!username) {
+        alert('Username is required');
+        return;
+    }
+    
+    // Go to auth page with username
+    window.location.href = `/auth?username=${encodeURIComponent(username)}`;
 });
