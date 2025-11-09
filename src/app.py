@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 app = Flask(__name__)
 
 # Placeholder image URLs to use across pages
@@ -25,11 +25,29 @@ def login():
 
 @app.route('/images')
 def image_links():
-    return render_template('images/links.html', images=IMAGES)
+    limit = request.args.get('limit', type=int)
+    images = IMAGES
+    
+    if limit is not None:
+        # Validate limit: must be a positive integer
+        if limit > 0:
+            images = IMAGES[:limit]
+        # If limit is invalid (<= 0), show all images (default behavior)
+    
+    return render_template('images/links.html', images=images)
 
 @app.route('/gallery')
 def image_grid():
-    return render_template('images/grid.html', images=IMAGES)
+    limit = request.args.get('limit', type=int)
+    images = IMAGES
+    
+    if limit is not None:
+        # Validate limit: must be a positive integer
+        if limit > 0:
+            images = IMAGES[:limit]
+        # If limit is invalid (<= 0), show all images (default behavior)
+    
+    return render_template('images/grid.html', images=images)
 
 
 if __name__ == '__main__':
