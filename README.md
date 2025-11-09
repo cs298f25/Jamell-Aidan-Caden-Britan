@@ -1,6 +1,6 @@
 # Image Hosting Platform
 
-![Testing](https://github.com/cs298f25/Jamell-Aidan-Caden-Britan.git/actions/workflows/runPythonTests.yml/badge.svg) <br>
+![Tests](https://github.com/cs298f25/Jamell-Aidan-Caden-Britan/actions/workflows/runPythonTests.yml/badge.svg)<br>
 
 Image hosting platform that allows users to upload, store, and view hosted images through a simple web interface. The project uses Flask for backend routing and API functionality, HTML/CSS for the frontend UI, Js for dynamic functionality, AWS S3 for scalable storage, and OAuth for user authentication and access control.
 
