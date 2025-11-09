@@ -22,12 +22,12 @@ class TestAppRoutes:
 
     def test_auth_route_exists(self, client):
         """Test that /auth route exists and returns 200"""
-        response = client.get('/auth')
+        response = client.get('/auth?username=testuser123')
         assert response.status_code == 200
 
     def test_auth_route_renders_correct_template(self, client):
         """Test that /auth route renders the authorization template"""
-        response = client.get('/auth')
+        response = client.get('/auth?username=testuser123')
         # Check that the response contains expected content
         assert b'authorization' in response.data.lower() or response.status_code == 200
 
