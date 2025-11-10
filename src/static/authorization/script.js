@@ -2,7 +2,6 @@
 const uploadBtn = document.getElementById('upload-btn');
 const fileInput = document.getElementById('file-input');
 const viewBtn = document.getElementById('view-btn');
-const deleteBtn = document.getElementById('delete-btn');
 const limitInput = document.getElementById('limit-input');
 
 // Get username from URL
@@ -31,7 +30,4 @@ viewBtn.onclick = () => {
     window.location.href = url;
 };
 
-// Delete button - navigate to auth page with username
-deleteBtn.onclick = () => {
-    window.location.href = `/auth?username=${encodeURIComponent(username)}`;
-};
+
