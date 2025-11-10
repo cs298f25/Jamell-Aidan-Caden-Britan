@@ -11,7 +11,7 @@
         <header>
             <div class="header-left">
                 <div class="user-avatar">👤</div>
-                <h1>User</h1>
+                <h1 id="username-display">{{ username }}</h1>
             </div>
             <button class="logout-btn">Logout</button>
         </header>
@@ -20,8 +20,8 @@
             <div class="buttons">
                 <button id="upload-btn">Upload Image</button>
                 <input type="file" id="file-input" style="display: none;" accept="image/*">
+                <input type="number" id="limit-input" placeholder="Limit (optional)" min="1" style="display: none;">
                 <button id="view-btn">View Images</button>
-                <button id="delete-btn">Delete Image</button>
             </div>
         </main>
     </div>

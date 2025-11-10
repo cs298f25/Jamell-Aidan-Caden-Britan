@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, abort
+
 app = Flask(__name__)
 
 # Placeholder image URLs to use across pages
@@ -17,7 +18,10 @@ IMAGES = [
 
 @app.route('/auth')
 def auth():
-    return render_template('authorization/index.html')
+    username = request.args.get('username', '').strip()
+    if not username:
+        abort(400, description="Username parameter is required")
+    return render_template('authorization/index.html', username=username)
 
 @app.route('/login')
 def login():
