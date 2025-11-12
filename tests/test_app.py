@@ -50,9 +50,8 @@ class TestAppRoutes:
         """Test that /images route passes IMAGES data to template"""
         response = client.get('/images')
         assert response.status_code == 200
-        # Verify that at least one image URL is in the response
-        # This assumes the template uses the images variable
-        assert any(img_url.encode() in response.data for img_url in IMAGES)
+        assert b'id="image-links"' in response.data
+        assert b'id="image-link-template"' in response.data
 
     def test_gallery_route_exists(self, client):
         """Test that /gallery route exists and returns 200"""
@@ -63,8 +62,8 @@ class TestAppRoutes:
         """Test that /gallery route passes IMAGES data to template"""
         response = client.get('/gallery')
         assert response.status_code == 200
-        # Verify that at least one image URL is in the response
-        assert any(img_url.encode() in response.data for img_url in IMAGES)
+        assert b'id="image-grid"' in response.data
+        assert b'id="image-card-template"' in response.data
 
     def test_nonexistent_route_returns_404(self, client):
         """Test that non-existent routes return 404"""
@@ -76,81 +75,57 @@ class TestAppRoutes:
         response = client.get('/')
         assert response.status_code == 404
 
-    def test_images_route_with_limit(self, client):
-        """Test that /images route respects limit query parameter"""
+    def test_images_api_returns_all_images(self, client):
+        """Test that /api/images returns all images by default"""
+        response = client.get('/api/images')
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data == {"images": IMAGES}
+
+    def test_images_api_with_limit(self, client):
+        """Test that /api/images respects limit query parameter"""
         limit = 3
-        response = client.get(f'/images?limit={limit}')
+        response = client.get(f'/api/images?limit={limit}')
         assert response.status_code == 200
-        # Count how many image URLs appear in the response
-        image_count = sum(1 for img_url in IMAGES[:limit] if img_url.encode() in response.data)
-        assert image_count == limit
+        data = response.get_json()
+        assert data["images"] == IMAGES[:limit]
 
-    def test_images_route_with_limit_exceeds_total(self, client):
-        """Test that /images route shows all images when limit exceeds total"""
+    def test_images_api_with_limit_exceeds_total(self, client):
+        """Test that /api/images returns all images when limit exceeds total"""
         limit = 100  # More than total number of images
-        response = client.get(f'/images?limit={limit}')
+        response = client.get(f'/api/images?limit={limit}')
         assert response.status_code == 200
-        # Should show all images, not error
-        assert any(img_url.encode() in response.data for img_url in IMAGES)
+        data = response.get_json()
+        assert data["images"] == IMAGES
 
-    def test_images_route_with_invalid_limit_negative(self, client):
-        """Test that /images route ignores negative limit and shows all images"""
-        response = client.get('/images?limit=-5')
+    def test_images_api_with_invalid_limit_negative(self, client):
+        """Test that /api/images ignores negative limit and returns all images"""
+        response = client.get('/api/images?limit=-5')
         assert response.status_code == 200
-        # Should show all images when limit is invalid
-        assert all(img_url.encode() in response.data for img_url in IMAGES)
+        data = response.get_json()
+        assert data["images"] == IMAGES
 
-    def test_images_route_with_invalid_limit_zero(self, client):
-        """Test that /images route ignores zero limit and shows all images"""
-        response = client.get('/images?limit=0')
+    def test_images_api_with_invalid_limit_zero(self, client):
+        """Test that /api/images ignores zero limit and returns all images"""
+        response = client.get('/api/images?limit=0')
         assert response.status_code == 200
-        # Should show all images when limit is 0
-        assert all(img_url.encode() in response.data for img_url in IMAGES)
+        data = response.get_json()
+        assert data["images"] == IMAGES
 
-    def test_images_route_with_non_integer_limit(self, client):
-        """Test that /images route ignores non-integer limit and shows all images"""
-        response = client.get('/images?limit=abc')
+    def test_images_api_with_non_integer_limit(self, client):
+        """Test that /api/images ignores non-integer limit and returns all images"""
+        response = client.get('/api/images?limit=abc')
         assert response.status_code == 200
-        # Should show all images when limit is not an integer
-        assert all(img_url.encode() in response.data for img_url in IMAGES)
+        data = response.get_json()
+        assert data["images"] == IMAGES
 
-    def test_gallery_route_with_limit(self, client):
-        """Test that /gallery route respects limit query parameter"""
+    def test_gallery_route_with_limit_query_parameter(self, client):
+        """Test that /gallery route includes template hooks for client rendering"""
         limit = 5
         response = client.get(f'/gallery?limit={limit}')
         assert response.status_code == 200
-        # Count how many image URLs appear in the response
-        image_count = sum(1 for img_url in IMAGES[:limit] if img_url.encode() in response.data)
-        assert image_count == limit
-
-    def test_gallery_route_with_limit_exceeds_total(self, client):
-        """Test that /gallery route shows all images when limit exceeds total"""
-        limit = 100  # More than total number of images
-        response = client.get(f'/gallery?limit={limit}')
-        assert response.status_code == 200
-        # Should show all images, not error
-        assert any(img_url.encode() in response.data for img_url in IMAGES)
-
-    def test_gallery_route_with_invalid_limit_negative(self, client):
-        """Test that /gallery route ignores negative limit and shows all images"""
-        response = client.get('/gallery?limit=-5')
-        assert response.status_code == 200
-        # Should show all images when limit is invalid
-        assert all(img_url.encode() in response.data for img_url in IMAGES)
-
-    def test_gallery_route_with_invalid_limit_zero(self, client):
-        """Test that /gallery route ignores zero limit and shows all images"""
-        response = client.get('/gallery?limit=0')
-        assert response.status_code == 200
-        # Should show all images when limit is 0
-        assert all(img_url.encode() in response.data for img_url in IMAGES)
-
-    def test_gallery_route_with_non_integer_limit(self, client):
-        """Test that /gallery route ignores non-integer limit and shows all images"""
-        response = client.get('/gallery?limit=abc')
-        assert response.status_code == 200
-        # Should show all images when limit is not an integer
-        assert all(img_url.encode() in response.data for img_url in IMAGES)
+        assert b'id="image-grid"' in response.data
+        assert b'id="image-card-template"' in response.data
 
 
 class TestImagesConstant:

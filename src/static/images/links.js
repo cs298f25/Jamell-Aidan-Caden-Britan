@@ -1,22 +1,39 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const dataElement = document.getElementById('image-links-data');
-  const template = document.getElementById('image-link-template');
-  const list = document.getElementById('image-links');
+const IMAGES_ENDPOINT = '/api/images';
 
-  if (!dataElement || !template || !list) {
-    return;
+function buildEndpoint() {
+  const searchParams = new URLSearchParams(window.location.search);
+  const limit = searchParams.get('limit');
+
+  if (limit) {
+    return `${IMAGES_ENDPOINT}?limit=${encodeURIComponent(limit)}`;
   }
 
-  let imageUrls = [];
+  return IMAGES_ENDPOINT;
+}
 
-  try {
-    imageUrls = JSON.parse(dataElement.textContent || '[]');
-  } catch (error) {
-    console.error('Failed to parse image links data:', error);
-    return;
+async function fetchImageUrls() {
+  const endpoint = buildEndpoint();
+  const response = await fetch(endpoint);
+
+  if (!response.ok) {
+    throw new Error(`Request failed with status ${response.status}`);
   }
 
-  imageUrls.forEach((url) => {
+  const data = await response.json();
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data.images)) {
+    return data.images;
+  }
+
+  return [];
+}
+
+function renderImageLinks(urls, template, list) {
+  urls.forEach((url) => {
     const instance = template.content.cloneNode(true);
     const anchor = instance.querySelector('[data-image-link]');
 
@@ -27,5 +44,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     list.appendChild(instance);
   });
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const template = document.getElementById('image-link-template');
+  const list = document.getElementById('image-links');
+
+  if (!template || !list) {
+    return;
+  }
+
+  try {
+    const urls = await fetchImageUrls();
+    renderImageLinks(urls, template, list);
+  } catch (error) {
+    console.error('Failed to load image links:', error);
+  }
 });
 

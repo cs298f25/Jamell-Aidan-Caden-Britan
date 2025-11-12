@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, abort
+from flask import Flask, render_template, request, abort, jsonify
 
 app = Flask(__name__)
 
@@ -29,29 +29,21 @@ def login():
 
 @app.route('/images')
 def image_links():
-    limit = request.args.get('limit', type=int)
-    images = IMAGES
-    
-    if limit is not None:
-        # Validate limit: must be a positive integer
-        if limit > 0:
-            images = IMAGES[:limit]
-        # If limit is invalid (<= 0), show all images (default behavior)
-    
-    return render_template('images/links.html', images=images)
+    return render_template('images/links.html')
 
 @app.route('/gallery')
 def image_grid():
+    return render_template('images/grid.html')
+
+@app.route('/api/images')
+def images_api():
     limit = request.args.get('limit', type=int)
     images = IMAGES
-    
-    if limit is not None:
-        # Validate limit: must be a positive integer
-        if limit > 0:
-            images = IMAGES[:limit]
-        # If limit is invalid (<= 0), show all images (default behavior)
-    
-    return render_template('images/grid.html', images=images)
+
+    if limit is not None and limit > 0:
+        images = IMAGES[:limit]
+
+    return jsonify({"images": images})
 
 
 if __name__ == '__main__':
