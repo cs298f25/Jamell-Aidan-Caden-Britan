@@ -1,265 +1,126 @@
-# src/database.py
-import pymysql
-import os
-import dotenv
+import sqlite3
+from typing import Optional, List, Dict
 from pathlib import Path
 
-dotenv.load_dotenv()
 
-# Database configuration from environment variables
-DB_HOST = os.getenv('DB_HOST', 'localhost')
-DB_USER = os.getenv('DB_USER', 'root')
-DB_PASSWORD = os.getenv('DB_PASSWORD', '')
-DB_NAME = os.getenv('DB_NAME', 'image_hosting')
-DB_PORT = int(os.getenv('DB_PORT', 3306))
-
-
-def get_connection():
-    """Create and return a database connection."""
-    try:
-        connection = pymysql.connect(
-            host=DB_HOST,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            database=DB_NAME,
-            port=DB_PORT,
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        return connection
-    except pymysql.Error as e:
-        print(f"Error connecting to database: {e}")
-        return None
-
-
-def initialize_database():
-    """Initialize the database by creating tables from tables.sql file."""
-    # First, connect without specifying a database to create it if it doesn't exist
-    try:
-        connection = pymysql.connect(
-            host=DB_HOST,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            port=DB_PORT,
-            cursorclass=pymysql.cursors.DictCursor
-        )
-        with connection.cursor() as cursor:
-            # Create database if it doesn't exist
-            cursor.execute(f"CREATE DATABASE IF NOT EXISTS {DB_NAME}")
-            cursor.execute(f"USE {DB_NAME}")
-        connection.close()
-    except pymysql.Error as e:
-        print(f"Error creating database: {e}")
-        return False
+class DatabaseStorage:
+    """SQLite-backed storage for user images."""
     
-    # Now connect to the database and create tables
-    connection = get_connection()
-    if not connection:
-        return False
+    def __init__(self, database_path):
+        self._database_path = str(database_path)
+        self._initialize_database()
     
-    try:
-        # Read the SQL file
+    def _initialize_database(self):
+        """Initialize the database with required tables from tables.sql file."""
+        # Get the path to tables.sql file (same directory as this file)
         sql_file_path = Path(__file__).parent / 'tables.sql'
-        with open(sql_file_path, 'r') as file:
-            sql_script = file.read()
         
-        # Split the script into individual statements
-        statements = [stmt.strip() for stmt in sql_script.split(';') if stmt.strip()]
+        if not sql_file_path.exists():
+            raise FileNotFoundError(f"tables.sql file not found at {sql_file_path}")
         
-        with connection.cursor() as cursor:
-            for statement in statements:
-                if statement:
-                    try:
-                        cursor.execute(statement)
-                    except pymysql.Error as e:
-                        # Ignore error if table already exists
-                        if "already exists" not in str(e).lower() and "duplicate" not in str(e).lower():
-                            print(f"Warning: Error executing statement: {e}")
-                            # Continue with other statements
+        # Read the SQL file
+        with open(sql_file_path, 'r') as f:
+            sql_script = f.read()
         
-        connection.commit()
-        print("Database initialized successfully")
-        return True
-    except pymysql.Error as e:
-        print(f"Error initializing database: {e}")
-        if connection:
-            connection.rollback()
-        return False
-    except FileNotFoundError:
-        print(f"Error: tables.sql file not found at {sql_file_path}")
-        return False
-    finally:
-        connection.close()
-
-
-def get_images(limit=None, user_id=None):
-    """Retrieve images from the database.
-    
-    Args:
-        limit: Maximum number of images to return (optional)
-        user_id: Filter images by user_id (optional)
-    
-    Returns:
-        List of image dictionaries
-    """
-    connection = get_connection()
-    if not connection:
-        return []
-    
-    try:
-        with connection.cursor() as cursor:
-            if user_id:
-                query = "SELECT id, user_id, image_url, created_at FROM images WHERE user_id = %s ORDER BY created_at DESC"
-                if limit:
-                    query += f" LIMIT {int(limit)}"
-                cursor.execute(query, (user_id,))
-            else:
-                query = "SELECT id, user_id, image_url, created_at FROM images ORDER BY created_at DESC"
-                if limit:
-                    query += f" LIMIT {int(limit)}"
-                cursor.execute(query)
+        with sqlite3.connect(self._database_path) as connection:
+            # Enable foreign key constraints (required for CASCADE deletes)
+            connection.execute("PRAGMA foreign_keys = ON")
             
-            images = cursor.fetchall()
-            return [dict(img) for img in images]
-    except pymysql.Error as e:
-        print(f"Error fetching images: {e}")
-        return []
-    finally:
-        connection.close()
-
-
-def add_image(user_id, image_url):
-    """Add an image to the database.
+            # Process SQL script: remove comments and split into statements
+            lines = []
+            for line in sql_script.split('\n'):
+                # Remove inline comments (-- comment)
+                if '--' in line:
+                    line = line[:line.index('--')]
+                line = line.strip()
+                if line:
+                    lines.append(line)
+            
+            # Join all lines and split by semicolon to get individual statements
+            full_script = ' '.join(lines)
+            statements = [stmt.strip() for stmt in full_script.split(';') if stmt.strip()]
+            
+            # Execute each statement
+            for statement in statements:
+                connection.execute(statement)
+            
+            connection.commit()
     
-    Args:
-        user_id: ID of the user who uploaded the image
-        image_url: URL of the image
+    def add_user(self, username: str) -> Optional[int]:
+        """Add a new user and return their ID."""
+        query = "INSERT INTO users (username) VALUES (?)"
+        try:
+            with sqlite3.connect(self._database_path) as connection:
+                connection.execute("PRAGMA foreign_keys = ON")
+                cursor = connection.execute(query, (username,))
+                connection.commit()
+                return cursor.lastrowid
+        except sqlite3.IntegrityError:
+            return None
     
-    Returns:
-        True if successful, False otherwise
-    """
-    connection = get_connection()
-    if not connection:
-        return False
+    def get_user(self, username: str) -> Optional[Dict]:
+        """Retrieve user information by username."""
+        query = """
+            SELECT id, username, created_at
+            FROM users
+            WHERE username = ?
+            LIMIT 1
+        """
+        with sqlite3.connect(self._database_path) as connection:
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.row_factory = sqlite3.Row
+            row = connection.execute(query, (username,)).fetchone()
+            return dict(row) if row else None
     
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "INSERT INTO images (user_id, image_url) VALUES (%s, %s)",
-                (user_id, image_url)
-            )
-        connection.commit()
-        return True
-    except pymysql.Error as e:
-        print(f"Error adding image: {e}")
-        connection.rollback()
-        return False
-    finally:
-        connection.close()
-
-
-def get_user_by_username(username):
-    """Get a user by username.
+    def delete_user(self, username: str) -> bool:
+        """Delete a user and all associated images."""
+        query = "DELETE FROM users WHERE username = ?"
+        with sqlite3.connect(self._database_path) as connection:
+            connection.execute("PRAGMA foreign_keys = ON")
+            cursor = connection.execute(query, (username,))
+            connection.commit()
+            return cursor.rowcount > 0
     
-    Args:
-        username: Username to search for
+    def add_image(self, username: str, image_url: str) -> Optional[int]:
+        """Add an image for a user."""
+        # Get user_id
+        user = self.get_user(username)
+        if not user:
+            return None
+        
+        user_id = user['id']
+        
+        query = "INSERT INTO images (user_id, image_url) VALUES (?, ?)"
+        with sqlite3.connect(self._database_path) as connection:
+            connection.execute("PRAGMA foreign_keys = ON")
+            cursor = connection.execute(query, (user_id, image_url))
+            connection.commit()
+            return cursor.lastrowid
     
-    Returns:
-        User dictionary or None if not found
-    """
-    connection = get_connection()
-    if not connection:
-        return None
+    def get_images(self, username: str) -> List[Dict]:
+        """Get all images for a user."""
+        query = """
+            SELECT images.id, images.image_url, images.created_at
+            FROM images
+            INNER JOIN users ON users.id = images.user_id
+            WHERE users.username = ?
+            ORDER BY images.created_at DESC
+        """
+        with sqlite3.connect(self._database_path) as connection:
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.row_factory = sqlite3.Row
+            rows = connection.execute(query, (username,)).fetchall()
+            return [dict(row) for row in rows]
     
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "SELECT id, username, password, created_at FROM users WHERE username = %s",
-                (username,)
-            )
-            user = cursor.fetchone()
-            return dict(user) if user else None
-    except pymysql.Error as e:
-        print(f"Error fetching user: {e}")
-        return None
-    finally:
-        connection.close()
-
-
-def create_user(username, password):
-    """Create a new user.
-    
-    Args:
-        username: Username for the new user
-        password: Password for the new user (should be hashed)
-    
-    Returns:
-        User ID if successful, None otherwise
-    """
-    connection = get_connection()
-    if not connection:
-        return None
-    
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute(
-                "INSERT INTO users (username, password) VALUES (%s, %s)",
-                (username, password)
-            )
-            user_id = cursor.lastrowid
-        connection.commit()
-        return user_id
-    except pymysql.Error as e:
-        print(f"Error creating user: {e}")
-        connection.rollback()
-        return None
-    finally:
-        connection.close()
-
-
-def get_categories():
-    """Retrieve all categories from the database.
-    
-    Returns:
-        List of category dictionaries
-    """
-    connection = get_connection()
-    if not connection:
-        return []
-    
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT id, name FROM categories ORDER BY name")
-            categories = cursor.fetchall()
-            return [dict(cat) for cat in categories]
-    except pymysql.Error as e:
-        print(f"Error fetching categories: {e}")
-        return []
-    finally:
-        connection.close()
-
-
-def add_category(name):
-    """Add a category to the database.
-    
-    Args:
-        name: Name of the category
-    
-    Returns:
-        True if successful, False otherwise
-    """
-    connection = get_connection()
-    if not connection:
-        return False
-    
-    try:
-        with connection.cursor() as cursor:
-            cursor.execute("INSERT INTO categories (name) VALUES (%s)", (name,))
-        connection.commit()
-        return True
-    except pymysql.Error as e:
-        print(f"Error adding category: {e}")
-        connection.rollback()
-        return False
-    finally:
-        connection.close()
-
+    def delete_image(self, username: str, image_id: int) -> bool:
+        """Delete a specific image for a user."""
+        query = """
+            DELETE FROM images
+            WHERE id = ?
+              AND user_id = (SELECT id FROM users WHERE username = ?)
+        """
+        with sqlite3.connect(self._database_path) as connection:
+            connection.execute("PRAGMA foreign_keys = ON")
+            cursor = connection.execute(query, (image_id, username))
+            connection.commit()
+            return cursor.rowcount > 0
