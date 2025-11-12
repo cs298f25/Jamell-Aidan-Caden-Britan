@@ -1,19 +1,21 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Images</title>
-  </head>
-  <body>
-    <h1>Images</h1>
-    <p><a href="/images">View links</a></p>
-    {% for url in images %}
-    <div>
-      <a href="{{ url }}">
-        <img src="{{ url }}" alt="Image" />
+<head>
+  <meta charset="utf-8">
+  <title>Gallery</title>
+  <link rel="stylesheet" href="../../static/images/grid.css">
+  <script src="../../static/images/grid.js" defer></script>
+</head>
+<body>
+  <h1>Images</h1>
+  <p><a href="/links?limit=5">View links</a></p>
+  <div id="image-grid"></div>
+  <template id="image-card-template">
+    <div class="image-card">
+      <a data-image-link>
+        <img data-image-src alt="Image">
       </a>
     </div>
-    {% endfor %}
-  </body>
-  </html>
+  </template>
+</body>
+</html>
