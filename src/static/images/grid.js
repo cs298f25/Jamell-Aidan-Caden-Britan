@@ -40,6 +40,19 @@ function renderImages(container, template) {
   });
 }
 
+// Keep all query parameters in the URL when clicking navigation links
+function preserveQueryParams() {
+  const currentParams = new URLSearchParams(window.location.search);
+  const viewLinksButton = document.querySelector('a[href*="/links"]');
+  if (!viewLinksButton) return;
+  
+  const linkUrl = new URL(viewLinksButton.href, window.location.origin);
+  currentParams.forEach((value, key) => {
+    linkUrl.searchParams.set(key, value);
+  });
+  viewLinksButton.href = linkUrl.pathname + linkUrl.search;
+}
+
 // Run after DOM loads
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('image-grid');
@@ -47,4 +60,5 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!container || !template) return;
 
   renderImages(container, template);
+  preserveQueryParams();
 });
