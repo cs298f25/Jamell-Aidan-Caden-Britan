@@ -4,16 +4,23 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Image Links</title>
+    <link rel="stylesheet" href="../../static/images/links.css" />
   </head>
   <body>
     <h1>Image Links</h1>
     <p><a href="/gallery">View images</a></p>
-    <ul>
-      {% for url in images %}
-      <li>
-        <a href="{{ url }}">{{ url }}</a>
+    <ul id="image-links"></ul>
+
+    <template id="image-link-template">
+      <li class="image-link">
+        <a data-image-link target="_blank" rel="noopener noreferrer"></a>
       </li>
-      {% endfor %}
-    </ul>
+    </template>
+
+    <script id="image-links-data" type="application/json">
+      {{ images | tojson }}
+    </script>
+
+    <script src="../../static/images/links.js"></script>
   </body>
   </html>
