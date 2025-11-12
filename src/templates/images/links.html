@@ -1,22 +1,17 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Image Links</title>
-    <link rel="stylesheet" href="../../static/images/links.css" />
-  </head>
-  <body>
-    <h1>Image Links</h1>
-    <p><a href="/gallery">View images</a></p>
-    <ul id="image-links"></ul>
-
-    <template id="image-link-template">
-      <li class="image-link">
-        <a data-image-link target="_blank" rel="noopener noreferrer"></a>
-      </li>
-    </template>
-
-    <script src="../../static/images/links.js"></script>
-  </body>
-  </html>
+<head>
+  <meta charset="utf-8">
+  <title>Image Links</title>
+  <link rel="stylesheet" href="../../static/images/links.css">
+  <script src="../../static/images/links.js" defer></script>
+</head>
+<body>
+  <h1>Image Links</h1>
+  <p><a href="/gallery?limit=5">View gallery</a></p>
+  <ul id="image-links"></ul>
+  <template id="image-link-template">
+  <li class="image-link"><a data-image-link href="#"></a></li>
+</template>
+</body>
+</html>

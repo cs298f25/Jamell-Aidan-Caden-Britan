@@ -1,69 +1,50 @@
-const IMAGES_ENDPOINT = '/api/images';
+// All images live in JS, no API needed
+const IMAGES = [
+  "https://picsum.photos/id/1015/600/400",
+  "https://picsum.photos/id/1016/600/400",
+  "https://picsum.photos/id/1024/600/400",
+  "https://picsum.photos/id/1025/600/400",
+  "https://picsum.photos/id/1035/600/400",
+  "https://picsum.photos/id/1041/600/400",
+  "https://picsum.photos/id/1050/600/400",
+  "https://picsum.photos/id/1069/600/400",
+  "https://picsum.photos/id/1074/600/400",
+  "https://picsum.photos/id/1084/600/400"
+];
 
-function buildEndpoint() {
-  const searchParams = new URLSearchParams(window.location.search);
-  const limit = searchParams.get('limit');
-
-  if (limit) {
-    return `${IMAGES_ENDPOINT}?limit=${encodeURIComponent(limit)}`;
+// Read limit from URL query param
+function getLimit() {
+  const params = new URLSearchParams(window.location.search);
+  let limit = parseInt(params.get('limit'), 10);
+  if (!limit || limit <= 0) {
+    limit = 5; // default value
   }
-
-  return IMAGES_ENDPOINT;
+  return Math.min(limit, IMAGES.length); // don’t exceed total images
 }
 
-async function fetchImageUrls() {
-  const endpoint = buildEndpoint();
-  const response = await fetch(endpoint);
+// Render images dynamically
+function renderImages(container, template) {
+  const limit = getLimit();
+  const urls = IMAGES.slice(0, limit);
 
-  if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
-  }
-
-  const data = await response.json();
-
-  if (Array.isArray(data)) {
-    return data;
-  }
-
-  if (Array.isArray(data.images)) {
-    return data.images;
-  }
-
-  return [];
-}
-
-function renderImages(urls, template, container) {
-  urls.forEach((url) => {
+  container.innerHTML = '';
+  urls.forEach(url => {
     const instance = template.content.cloneNode(true);
     const link = instance.querySelector('[data-image-link]');
-    const image = instance.querySelector('[data-image-src]');
+    const img = instance.querySelector('[data-image-src]');
 
-    if (link) {
-      link.href = url;
-    }
-
-    if (image) {
-      image.src = url;
-      image.alt = 'Image';
-    }
+    if (link) link.href = url;
+    if (img) img.src = url;
 
     container.appendChild(instance);
   });
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  const template = document.getElementById('image-card-template');
+// Run after DOM loads
+document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('image-grid');
+  const template = document.getElementById('image-card-template');
+  if (!container || !template) return;
 
-  if (!template || !container) {
-    return;
-  }
-
-  try {
-    const urls = await fetchImageUrls();
-    renderImages(urls, template, container);
-  } catch (error) {
-    console.error('Failed to load images:', error);
-  }
+  renderImages(container, template);
 });
-
