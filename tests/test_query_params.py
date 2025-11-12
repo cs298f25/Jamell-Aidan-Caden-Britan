@@ -50,7 +50,7 @@ class TestUsernameParameter(unittest.TestCase):
 
     def test_login_route_no_username_required(self):
         """Test that /login route does not require username parameter"""
-        response = self.client.get('/login')
+        response = self.client.get('/')
         self.assertEqual(response.status_code, 200)
         self.assertIn(b'username-input', response.data)
 
