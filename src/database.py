@@ -1,6 +1,5 @@
 import sqlite3
 from typing import Optional, List, Dict
-from pathlib import Path
 
 
 class DatabaseStorage:
@@ -11,39 +10,24 @@ class DatabaseStorage:
         self._initialize_database()
     
     def _initialize_database(self):
-        """Initialize the database with required tables from tables.sql file."""
-        # Get the path to tables.sql file (same directory as this file)
-        sql_file_path = Path(__file__).parent / 'tables.sql'
-        
-        if not sql_file_path.exists():
-            raise FileNotFoundError(f"tables.sql file not found at {sql_file_path}")
-        
-        # Read the SQL file
-        with open(sql_file_path, 'r') as f:
-            sql_script = f.read()
-        
+        """Create tables if they don't exist."""
         with sqlite3.connect(self._database_path) as connection:
-            # Enable foreign key constraints (required for CASCADE deletes)
-            connection.execute("PRAGMA foreign_keys = ON")
-            
-            # Process SQL script: remove comments and split into statements
-            lines = []
-            for line in sql_script.split('\n'):
-                # Remove inline comments (-- comment)
-                if '--' in line:
-                    line = line[:line.index('--')]
-                line = line.strip()
-                if line:
-                    lines.append(line)
-            
-            # Join all lines and split by semicolon to get individual statements
-            full_script = ' '.join(lines)
-            statements = [stmt.strip() for stmt in full_script.split(';') if stmt.strip()]
-            
-            # Execute each statement
-            for statement in statements:
-                connection.execute(statement)
-            
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    username TEXT NOT NULL UNIQUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            connection.execute("""
+                CREATE TABLE IF NOT EXISTS images (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    image_url TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                )
+            """)
             connection.commit()
     
     def add_user(self, username: str) -> Optional[int]:
@@ -51,7 +35,6 @@ class DatabaseStorage:
         query = "INSERT INTO users (username) VALUES (?)"
         try:
             with sqlite3.connect(self._database_path) as connection:
-                connection.execute("PRAGMA foreign_keys = ON")
                 cursor = connection.execute(query, (username,))
                 connection.commit()
                 return cursor.lastrowid
@@ -67,7 +50,6 @@ class DatabaseStorage:
             LIMIT 1
         """
         with sqlite3.connect(self._database_path) as connection:
-            connection.execute("PRAGMA foreign_keys = ON")
             connection.row_factory = sqlite3.Row
             row = connection.execute(query, (username,)).fetchone()
             return dict(row) if row else None
@@ -76,7 +58,6 @@ class DatabaseStorage:
         """Delete a user and all associated images."""
         query = "DELETE FROM users WHERE username = ?"
         with sqlite3.connect(self._database_path) as connection:
-            connection.execute("PRAGMA foreign_keys = ON")
             cursor = connection.execute(query, (username,))
             connection.commit()
             return cursor.rowcount > 0
@@ -92,7 +73,6 @@ class DatabaseStorage:
         
         query = "INSERT INTO images (user_id, image_url) VALUES (?, ?)"
         with sqlite3.connect(self._database_path) as connection:
-            connection.execute("PRAGMA foreign_keys = ON")
             cursor = connection.execute(query, (user_id, image_url))
             connection.commit()
             return cursor.lastrowid
@@ -107,7 +87,6 @@ class DatabaseStorage:
             ORDER BY images.created_at DESC
         """
         with sqlite3.connect(self._database_path) as connection:
-            connection.execute("PRAGMA foreign_keys = ON")
             connection.row_factory = sqlite3.Row
             rows = connection.execute(query, (username,)).fetchall()
             return [dict(row) for row in rows]
@@ -120,7 +99,32 @@ class DatabaseStorage:
               AND user_id = (SELECT id FROM users WHERE username = ?)
         """
         with sqlite3.connect(self._database_path) as connection:
-            connection.execute("PRAGMA foreign_keys = ON")
             cursor = connection.execute(query, (image_id, username))
             connection.commit()
             return cursor.rowcount > 0
+
+
+class UserManager:
+    """Manages user operations and image storage."""
+    
+    def __init__(self, storage: DatabaseStorage):
+        self.storage = storage
+    
+    def login_user(self, username: str) -> Dict:
+        """Login or create a user if they don't exist."""
+        user = self.storage.get_user(username)
+        
+        if not user:
+            # User doesn't exist, create them
+            user_id = self.storage.add_user(username)
+            user = self.storage.get_user(username)
+        
+        return user
+    
+    def add_image(self, username: str, image_url: str) -> Optional[int]:
+        """Add an image for a user."""
+        return self.storage.add_image(username, image_url)
+    
+    def list_images(self, username: str) -> List[Dict]:
+        """Get all images for a user."""
+        return self.storage.get_images(username)

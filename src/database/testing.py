@@ -1,0 +1,1 @@
+print("SELECT * FROM users;")

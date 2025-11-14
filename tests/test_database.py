@@ -32,7 +32,7 @@ def test_add_user():
     # Execute the SQL from insert.sql
     with sqlite3.connect(test_db_path) as connection:
         connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute(insert_sql)
+        connection.executescript(insert_sql)
         connection.commit()
     print(f"✓ Executed SQL from insert.sql: {insert_sql}")
     
