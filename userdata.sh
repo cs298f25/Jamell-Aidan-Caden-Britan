@@ -9,9 +9,9 @@ sudo yum install -y python3 python3-pip git
 # Install gunicorn for production Flask deployment
 sudo pip3 install gunicorn
 
-# Clone the repository
+# Clone the repository (specific branch)
 cd /home/ec2-user
-git clone https://github.com/cs298f25/Jamell-Aidan-Caden-Britan.git
+git clone -b userdata_script https://github.com/cs298f25/Jamell-Aidan-Caden-Britan.git
 cd Jamell-Aidan-Caden-Britan
 
 # Create virtual environment
