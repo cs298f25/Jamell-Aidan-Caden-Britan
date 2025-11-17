@@ -2,7 +2,7 @@ import unittest
 import boto3
 from moto import mock_aws
 import os
-from src import storageAws
+from database import storageAws
 
 
 @mock_aws

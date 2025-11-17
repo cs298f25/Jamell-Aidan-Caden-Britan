@@ -6,7 +6,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src import storageInMemory
+from database import storageInMemory
+
 
 class TestUserOperations:
     """Test suite for user-related operations"""
