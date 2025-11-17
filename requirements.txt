@@ -1,3 +1,5 @@
+requests
+botocore
 flask
 boto3
 python-dotenv
