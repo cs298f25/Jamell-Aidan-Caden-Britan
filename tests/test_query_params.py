@@ -1,8 +1,6 @@
 import unittest
 from src.app import app
 
-
-
 class TestUsernameParameter(unittest.TestCase):
 
     def setUp(self):
