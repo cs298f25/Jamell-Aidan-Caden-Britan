@@ -1,0 +1,18 @@
+name: Deploy on AWS
+
+on:
+  workflow_dispatch:  # this has to be triggered manually
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ssh-pipeline
+        uses: cross-the-world/ssh-pipeline@v1.2.0
+        with:
+          host: ${{ secrets.PUBLICIP }}
+          user: ec2-user
+          key: ${{ secrets.LABSUSERPEM }}
+          script: |
+            cd /Jamell-Aidan-Caden-Britan
+            ./redeploy.sh
