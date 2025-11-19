@@ -1,0 +1,14 @@
+[Unit]
+Description=Launch the Image Hosting Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=/Jamell-Aidan-Caden-Britan/src
+ExecStart=/Jamell-Aidan-Caden-Britan/.venv/bin/gunicorn \
+          --bind 0.0.0.0:80 \
+          --workers 4 \
+          app:app
+
+[Install]
+WantedBy=multi-user.target
