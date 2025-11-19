@@ -1,3 +1,5 @@
+#!/bin/bash
+
 yum install -y git
 git clone https://github.com/cs298f25/Jamell-Aidan-Caden-Britan.git
 cd /Jamell-Aidan-Caden-Britan
