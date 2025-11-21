@@ -1,31 +1,32 @@
-// All images live in JS, no API needed
-const IMAGES = [
-  "https://picsum.photos/id/1015/600/400",
-  "https://picsum.photos/id/1016/600/400",
-  "https://picsum.photos/id/1024/600/400",
-  "https://picsum.photos/id/1025/600/400",
-  "https://picsum.photos/id/1035/600/400",
-  "https://picsum.photos/id/1041/600/400",
-  "https://picsum.photos/id/1050/600/400",
-  "https://picsum.photos/id/1069/600/400",
-  "https://picsum.photos/id/1074/600/400",
-  "https://picsum.photos/id/1084/600/400"
-];
-
-// Read limit from URL query param
-function getLimit() {
+// Read limit and username from URL query param
+function getParams() {
   const params = new URLSearchParams(window.location.search);
   let limit = parseInt(params.get('limit'), 10);
   if (!limit || limit <= 0) {
-    limit = 5; // default value
+    limit = 100; // default high limit if not specified
   }
-  return Math.min(limit, IMAGES.length); // don’t exceed total images
+  const username = params.get('username');
+  return { limit, username };
+}
+
+// Fetch images from API
+async function fetchImages() {
+    const { limit, username } = getParams();
+    if (!username) return [];
+
+    try {
+        const response = await fetch(`/api/images?username=${encodeURIComponent(username)}`);
+        const images = await response.json();
+        return images.slice(0, limit);
+    } catch (error) {
+        console.error("Failed to fetch images", error);
+        return [];
+    }
 }
 
 // Render images dynamically
-function renderImages(container, template) {
-  const limit = getLimit();
-  const urls = IMAGES.slice(0, limit);
+async function renderImages(container, template) {
+  const urls = await fetchImages();
 
   container.innerHTML = '';
   urls.forEach(url => {
