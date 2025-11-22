@@ -3,19 +3,24 @@ function getParams() {
   const params = new URLSearchParams(window.location.search);
   let limit = parseInt(params.get('limit'), 10);
   if (!limit || limit <= 0) {
-    limit = 100; // default high limit if not specified
+    limit = 100;
   }
   const username = params.get('username');
-  return { limit, username };
+  const category = params.get('category');
+  return { limit, username, category };
 }
 
 // Fetch images from API
 async function fetchImages() {
-    const { limit, username } = getParams();
+    const { limit, username, category } = getParams();
     if (!username) return [];
 
     try {
-        const response = await fetch(`/api/images?username=${encodeURIComponent(username)}`);
+        let url = `/api/images?username=${encodeURIComponent(username)}`;
+        if (category) {
+            url += `&category=${encodeURIComponent(category)}`;
+        }
+        const response = await fetch(url);
         const images = await response.json();
         return images.slice(0, limit);
     } catch (error) {
@@ -41,7 +46,6 @@ async function renderImages(container, template) {
   });
 }
 
-// Keep all query parameters in the URL when clicking navigation links
 function preserveQueryParams() {
   const currentParams = new URLSearchParams(window.location.search);
   const viewLinksButton = document.querySelector('a[href*="/links"]');
@@ -59,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('image-grid');
   const template = document.getElementById('image-card-template');
   if (!container || !template) return;
-
   renderImages(container, template);
   preserveQueryParams();
 });

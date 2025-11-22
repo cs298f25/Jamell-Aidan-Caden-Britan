@@ -1,4 +1,3 @@
-// Read limit and username from URL query param
 function getParams() {
   const params = new URLSearchParams(window.location.search);
   let limit = parseInt(params.get('limit'), 10);
@@ -6,15 +5,20 @@ function getParams() {
     limit = 100; 
   }
   const username = params.get('username');
-  return { limit, username };
+  const category = params.get('category');
+  return { limit, username, category };
 }
 
 async function fetchImages() {
-    const { limit, username } = getParams();
+    const { limit, username, category } = getParams();
     if (!username) return [];
 
     try {
-        const response = await fetch(`/api/images?username=${encodeURIComponent(username)}`);
+        let url = `/api/images?username=${encodeURIComponent(username)}`;
+        if (category) {
+            url += `&category=${encodeURIComponent(category)}`;
+        }
+        const response = await fetch(url);
         const images = await response.json();
         return images.slice(0, limit);
     } catch (error) {
@@ -26,7 +30,6 @@ async function fetchImages() {
 // Render image links dynamically
 async function renderLinks(container, template) {
   const urls = await fetchImages();
-
   container.innerHTML = '';
   urls.forEach(url => {
     const instance = template.content.cloneNode(true);
@@ -55,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('image-links');
   const template = document.getElementById('image-link-template');
   if (!container || !template) return;
-
   renderLinks(container, template);
   preserveQueryParams();
 });
