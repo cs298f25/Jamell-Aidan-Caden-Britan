@@ -10,7 +10,6 @@ loginButton.addEventListener('click', function() {
         alert('Username is required');
         return;
     }
-
     // Go to auth page with username
     window.location.href = `/auth?username=${encodeURIComponent(username)}`;
 });

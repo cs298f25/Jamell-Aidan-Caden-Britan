@@ -13,6 +13,39 @@ uploadBtn.onclick = () => {
     fileInput.click();
 };
 
+// Handle File Selection and Upload
+fileInput.onchange = async () => {
+    if (fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('username', username);
+
+        // Change button text to indicate loading (Optional UX)
+        const originalText = uploadBtn.innerText;
+        uploadBtn.innerText = "Uploading...";
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('Image uploaded successfully!');
+            } else {
+                alert('Upload failed.');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('An error occurred during upload.');
+        } finally {
+            uploadBtn.innerText = originalText;
+            fileInput.value = ''; // Clear input
+        }
+    }
+};
+
 // View button - show limit input and navigate to gallery page with username and limit
 viewBtn.onclick = () => {
     // Show limit input if it's hidden
