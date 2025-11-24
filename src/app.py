@@ -1,7 +1,8 @@
 import os
-from flask import Flask, render_template, request, abort, jsonify
+from flask import Flask, render_template, request, abort, jsonify, Response
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
+from botocore.exceptions import ClientError
 from src.database import database
 from src.database import storageAws
 
@@ -9,6 +10,7 @@ load_dotenv()
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 BUCKET_NAME = os.getenv('BUCKET_NAME')
+
 
 @app.route('/auth')
 def auth():
@@ -18,9 +20,24 @@ def auth():
     database.get_or_create_user(username)
     return render_template('authorization/index.html', username=username)
 
+
 @app.route('/', methods=['GET'])
 def login():
     return render_template('login/index.html')
+
+
+@app.route('/image/<path:s3_key>')
+def serve_image(s3_key):
+    """Proxy S3 images through Flask to hide credentials"""
+    s3 = storageAws.get_client()
+    try:
+        response = s3.get_object(Bucket=BUCKET_NAME, Key=s3_key)
+        image_data = response['Body'].read()
+        content_type = response.get('ContentType', 'image/jpeg')
+        return Response(image_data, mimetype=content_type)
+    except ClientError as e:
+        print(f"Error fetching image: {e}")
+        abort(404)
 
 
 @app.route('/api/upload', methods=['POST'])
@@ -34,11 +51,11 @@ def upload_file():
         return jsonify({'error': 'No selected file or username missing'}), 400
     filename = secure_filename(file.filename)
     s3_key = f"{username}/{category}/{filename}"
-    success = storageAws.upload_image_direct(BUCKET_NAME, file, s3_key)
+    success = storageAws.upload_image_direct(BUCKET_NAME, file.stream, s3_key)
     if success:
-        s3_url = f"https://{BUCKET_NAME}.s3.amazonaws.com/{s3_key}"
-        database.add_image(username, s3_url)
-        return jsonify({'message': 'Upload successful', 'url': s3_url}), 200
+        database.add_image(username, s3_key)
+        proxy_url = f"/image/{s3_key}"
+        return jsonify({'message': 'Upload successful', 'url': proxy_url}), 200
     else:
         return jsonify({'error': 'Failed to upload to S3'}), 500
 
@@ -49,10 +66,11 @@ def get_images():
     category = request.args.get('category')
     if not username:
         return jsonify([]), 200
-    images = database.get_images_by_username(username)
+    s3_keys = database.get_images_by_username(username)
     if category:
-        images = [img for img in images if f"/{category}/" in img]
-    return jsonify(images)
+        s3_keys = [key for key in s3_keys if f"/{category}/" in key]
+    proxy_urls = [f"/image/{key}" for key in s3_keys]
+    return jsonify(proxy_urls)
 
 
 @app.route('/api/images/delete', methods=['DELETE'])
@@ -63,9 +81,8 @@ def delete_image():
     if not username or not category or not image_name:
         return jsonify({'error': 'Username, category, and image_name required'}), 400
     s3_key = f"{username}/{category}/{image_name}"
-    image_url = f"https://{BUCKET_NAME}.s3.amazonaws.com/{s3_key}"
     s3_deleted = storageAws.delete_image(BUCKET_NAME, s3_key)
-    db_deleted = database.delete_image_by_username(username, image_url)
+    db_deleted = database.delete_image_by_username(username, s3_key)
     if s3_deleted and db_deleted:
         return jsonify({'message': 'Image deleted successfully'}), 200
     else:
@@ -103,16 +120,15 @@ def images_api():
 
 
 if __name__ == '__main__':
-    if os.path.exists(database.DB_NAME): # removes old database
+    if os.path.exists(database.DB_NAME):
         os.remove(database.DB_NAME)
         print(f"Removed old database file: {database.DB_NAME}")
-    database.init_db() # creates new sqlite database
-    storageAws.delete_bucket(BUCKET_NAME) # deletes old s3 bucket
+
+    database.init_db()
+    storageAws.delete_bucket(BUCKET_NAME)
     print(f"Deleted bucket {BUCKET_NAME}")
 
-    if storageAws.create_bucket(BUCKET_NAME): # creates bucket and makes it public
-        print(f"Bucket {BUCKET_NAME} ready")
-        storageAws.make_bucket_public(BUCKET_NAME)
-        print(f"Bucket {BUCKET_NAME} is now public")
+    if storageAws.create_bucket(BUCKET_NAME):
+        print(f"Bucket {BUCKET_NAME} ready (private, proxied through Flask)")
 
     app.run(port=8000, debug=True)

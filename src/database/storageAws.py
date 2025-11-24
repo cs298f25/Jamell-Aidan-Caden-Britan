@@ -2,7 +2,6 @@ import boto3
 from botocore.exceptions import ClientError
 import os
 import dotenv
-import json
 
 dotenv.load_dotenv()
 REGION = os.getenv('REGION')
@@ -47,40 +46,6 @@ def delete_bucket(bucket_name):
         return False
 
 
-def make_bucket_public(bucket_name):
-    s3 = get_client()
-    try:
-        s3.put_public_access_block(
-            Bucket=bucket_name,
-            PublicAccessBlockConfiguration={
-                "BlockPublicAcls": False,
-                "IgnorePublicAcls": False,
-                "BlockPublicPolicy": False,
-                "RestrictPublicBuckets": False
-            }
-        )
-    except ClientError as e:
-        print(f"Error setting Public Access Block: {e}")
-        return False
-
-    policy = {
-        "Version": "2012-10-17",
-        "Statement": [{
-            "Effect": "Allow",
-            "Principal": "*",
-            "Action": "s3:GetObject",
-            "Resource": f"arn:aws:s3:::{bucket_name}/*"
-        }]
-    }
-
-    try:
-        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(policy))
-        return True
-    except ClientError as e:
-        print(f"Error setting Bucket Policy: {e}")
-        return False
-
-
 def upload_image_direct(bucket_name, file_stream, s3_key):
     s3 = get_client()
     try:
@@ -89,6 +54,21 @@ def upload_image_direct(bucket_name, file_stream, s3_key):
     except ClientError as e:
         print(f"Failed to upload to S3: {e}")
         return False
+
+
+def generate_presigned_url(bucket_name, s3_key, expiration=604800):
+    """Generate a pre-signed URL for an S3 object (default 7 days)"""
+    s3 = get_client()
+    try:
+        url = s3.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': bucket_name, 'Key': s3_key},
+            ExpiresIn=expiration
+        )
+        return url
+    except ClientError as e:
+        print(f"Error generating presigned URL: {e}")
+        return None
 
 
 def list_images_by_prefix(bucket_name, prefix):
