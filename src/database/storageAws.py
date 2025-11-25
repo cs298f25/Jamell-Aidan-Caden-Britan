@@ -2,12 +2,14 @@ import boto3
 from botocore.exceptions import ClientError
 import os
 import dotenv
+import json
 
 dotenv.load_dotenv()
 REGION = os.getenv('REGION')
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
+
 
 def get_client():
     return boto3.client("s3",
@@ -27,6 +29,64 @@ def create_bucket(bucket_name):
             print(f"Bucket {bucket_name} already exists.")
             return True
         print(f"Error creating bucket: {e}")
+        return False
+
+
+def make_bucket_public(bucket_name):
+    """Makes the bucket publicly accessible with proper CORS and policy"""
+    s3 = get_client()
+
+    # Set CORS configuration
+    cors_config = {
+        'CORSRules': [{
+            'AllowedHeaders': ['*'],
+            'AllowedMethods': ['GET', 'PUT', 'POST', 'DELETE'],
+            'AllowedOrigins': ['*'],
+            'ExposeHeaders': []
+        }]
+    }
+
+    try:
+        s3.put_bucket_cors(Bucket=bucket_name, CORSConfiguration=cors_config)
+        print(f"CORS configuration set for {bucket_name}")
+    except ClientError as e:
+        print(f"Error setting CORS: {e}")
+        return False
+
+    # Disable public access block
+    try:
+        s3.put_public_access_block(
+            Bucket=bucket_name,
+            PublicAccessBlockConfiguration={
+                "BlockPublicAcls": False,
+                "IgnorePublicAcls": False,
+                "BlockPublicPolicy": False,
+                "RestrictPublicBuckets": False
+            }
+        )
+        print(f"Public access block disabled for {bucket_name}")
+    except ClientError as e:
+        print(f"Error setting Public Access Block: {e}")
+        return False
+
+    # Set bucket policy for public read access
+    policy = {
+        "Version": "2012-10-17",
+        "Statement": [{
+            "Sid": "PublicReadGetObject",
+            "Effect": "Allow",
+            "Principal": "*",
+            "Action": "s3:GetObject",
+            "Resource": f"arn:aws:s3:::{bucket_name}/*"
+        }]
+    }
+
+    try:
+        s3.put_bucket_policy(Bucket=bucket_name, Policy=json.dumps(policy))
+        print(f"Bucket policy set for {bucket_name}")
+        return True
+    except ClientError as e:
+        print(f"Error setting Bucket Policy: {e}")
         return False
 
 
@@ -54,21 +114,6 @@ def upload_image_direct(bucket_name, file_stream, s3_key):
     except ClientError as e:
         print(f"Failed to upload to S3: {e}")
         return False
-
-
-def generate_presigned_url(bucket_name, s3_key, expiration=604800):
-    """Generate a pre-signed URL for an S3 object (default 7 days)"""
-    s3 = get_client()
-    try:
-        url = s3.generate_presigned_url(
-            'get_object',
-            Params={'Bucket': bucket_name, 'Key': s3_key},
-            ExpiresIn=expiration
-        )
-        return url
-    except ClientError as e:
-        print(f"Error generating presigned URL: {e}")
-        return None
 
 
 def list_images_by_prefix(bucket_name, prefix):

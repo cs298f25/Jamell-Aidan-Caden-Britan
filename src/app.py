@@ -1,8 +1,7 @@
 import os
-from flask import Flask, render_template, request, abort, jsonify, Response
+from flask import Flask, render_template, request, abort, jsonify
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
-from botocore.exceptions import ClientError
 from src.database import database
 from src.database import storageAws
 
@@ -26,20 +25,6 @@ def login():
     return render_template('login/index.html')
 
 
-@app.route('/image/<path:s3_key>')
-def serve_image(s3_key):
-    """Proxy S3 images through Flask to hide credentials"""
-    s3 = storageAws.get_client()
-    try:
-        response = s3.get_object(Bucket=BUCKET_NAME, Key=s3_key)
-        image_data = response['Body'].read()
-        content_type = response.get('ContentType', 'image/jpeg')
-        return Response(image_data, mimetype=content_type)
-    except ClientError as e:
-        print(f"Error fetching image: {e}")
-        abort(404)
-
-
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
     if 'file' not in request.files:
@@ -51,11 +36,11 @@ def upload_file():
         return jsonify({'error': 'No selected file or username missing'}), 400
     filename = secure_filename(file.filename)
     s3_key = f"{username}/{category}/{filename}"
-    success = storageAws.upload_image_direct(BUCKET_NAME, file.stream, s3_key)
+    success = storageAws.upload_image_direct(BUCKET_NAME, file, s3_key)
     if success:
-        database.add_image(username, s3_key)
-        proxy_url = f"/image/{s3_key}"
-        return jsonify({'message': 'Upload successful', 'url': proxy_url}), 200
+        s3_url = f"https://{BUCKET_NAME}.s3.amazonaws.com/{s3_key}"
+        database.add_image(username, s3_url)
+        return jsonify({'message': 'Upload successful', 'url': s3_url}), 200
     else:
         return jsonify({'error': 'Failed to upload to S3'}), 500
 
@@ -66,11 +51,10 @@ def get_images():
     category = request.args.get('category')
     if not username:
         return jsonify([]), 200
-    s3_keys = database.get_images_by_username(username)
+    images = database.get_images_by_username(username)
     if category:
-        s3_keys = [key for key in s3_keys if f"/{category}/" in key]
-    proxy_urls = [f"/image/{key}" for key in s3_keys]
-    return jsonify(proxy_urls)
+        images = [img for img in images if f"/{category}/" in img]
+    return jsonify(images)
 
 
 @app.route('/api/images/delete', methods=['DELETE'])
@@ -81,8 +65,9 @@ def delete_image():
     if not username or not category or not image_name:
         return jsonify({'error': 'Username, category, and image_name required'}), 400
     s3_key = f"{username}/{category}/{image_name}"
+    image_url = f"https://{BUCKET_NAME}.s3.amazonaws.com/{s3_key}"
     s3_deleted = storageAws.delete_image(BUCKET_NAME, s3_key)
-    db_deleted = database.delete_image_by_username(username, s3_key)
+    db_deleted = database.delete_image_by_username(username, image_url)
     if s3_deleted and db_deleted:
         return jsonify({'message': 'Image deleted successfully'}), 200
     else:
@@ -129,6 +114,8 @@ if __name__ == '__main__':
     print(f"Deleted bucket {BUCKET_NAME}")
 
     if storageAws.create_bucket(BUCKET_NAME):
-        print(f"Bucket {BUCKET_NAME} ready (private, proxied through Flask)")
+        print(f"Bucket {BUCKET_NAME} created")
+        storageAws.make_bucket_public(BUCKET_NAME)
+        print(f"Bucket {BUCKET_NAME} is now public")
 
     app.run(port=8000, debug=True)
