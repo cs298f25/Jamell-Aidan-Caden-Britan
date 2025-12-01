@@ -48,14 +48,23 @@ async function renderImages(container, template) {
 
 function preserveQueryParams() {
   const currentParams = new URLSearchParams(window.location.search);
-  const viewLinksButton = document.querySelector('a[href*="/links"]');
-  if (!viewLinksButton) return;
+  const username = currentParams.get('username');
   
-  const linkUrl = new URL(viewLinksButton.href, window.location.origin);
-  currentParams.forEach((value, key) => {
-    linkUrl.searchParams.set(key, value);
-  });
-  viewLinksButton.href = linkUrl.pathname + linkUrl.search;
+  // Preserve username for main menu link
+  const mainMenuLink = document.getElementById('main-menu-link');
+  if (mainMenuLink && username) {
+    mainMenuLink.href = `/auth?username=${encodeURIComponent(username)}`;
+  }
+  
+  // Preserve all params for view links button
+  const viewLinksButton = document.getElementById('view-links-link');
+  if (viewLinksButton) {
+    const linkUrl = new URL(viewLinksButton.href, window.location.origin);
+    currentParams.forEach((value, key) => {
+      linkUrl.searchParams.set(key, value);
+    });
+    viewLinksButton.href = linkUrl.pathname + linkUrl.search;
+  }
 }
 
 // Run after DOM loads
