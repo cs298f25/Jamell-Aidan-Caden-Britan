@@ -17,6 +17,17 @@
         </header>
 
         <main>
+            <div class="category-section">
+                <label for="category-select">Category:</label>
+                <select id="category-select">
+                    <option value="uncategorized">Uncategorized</option>
+                </select>
+                <div class="category-create">
+                    <input type="text" id="new-category-input" placeholder="New category name">
+                    <button id="create-category-btn">Create Category</button>
+                </div>
+                <div id="category-feedback" class="feedback"></div>
+            </div>
             <div class="buttons">
                 <button id="upload-btn">Upload Image</button>
                 <input type="file" id="file-input" style="display: none;" accept="image/*">
