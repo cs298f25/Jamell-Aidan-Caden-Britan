@@ -58,10 +58,10 @@ def get_user_id(username):
     return user['id'] if user else None
 
 
-def create_user(username):
+def create_user(username, password_hash=""):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, ""))
+    cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password_hash))
     conn.commit()
     user_id = cursor.lastrowid
     conn.close()
@@ -73,6 +73,14 @@ def get_or_create_user(username):
     if user_id:
         return user_id
     return create_user(username)
+
+
+def get_user(username):
+    conn = get_db_connection()
+    res = conn.execute("SELECT id, username, password FROM users WHERE username = ?", (username,))
+    user = res.fetchone()
+    conn.close()
+    return dict(user) if user else None
 
 
 def add_image(username, image_url):

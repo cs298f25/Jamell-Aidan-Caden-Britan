@@ -1,9 +1,10 @@
 import os
 from flask import Flask, render_template, request, abort, jsonify
 from werkzeug.utils import secure_filename
+from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
-from src.database import database
-from src.database import storageAws
+from database import database
+from database import storageAws
 
 load_dotenv()
 app = Flask(__name__)
@@ -14,9 +15,23 @@ BUCKET_NAME = os.getenv('BUCKET_NAME')
 @app.route('/auth')
 def auth():
     username = request.args.get('username', '').strip()
+    password = request.args.get('password', '').strip()
     if not username:
         abort(400, description="Username parameter is required")
-    database.get_or_create_user(username)
+    if not password:
+        abort(400, description="Password parameter is required")
+
+    user = database.get_user(username)
+    if user is None:
+        # New user: create with hashed password
+        password_hash = generate_password_hash(password)
+        database.create_user(username, password_hash)
+    else:
+        # Existing user: verify password
+        stored_hash = user.get('password') or ''
+        if not check_password_hash(stored_hash, password):
+            abort(401, description="Invalid username or password")
+
     return render_template('authorization/index.html', username=username)
 
 

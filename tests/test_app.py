@@ -23,9 +23,10 @@ def test_login_page_loads(client):
     assert response.status_code == 200
 
 def test_auth_creates_user(client):
-    response = client.get('/auth?username=alice')
+    response = client.get('/auth?username=alice&password=testpassword123')
     assert response.status_code == 200
     user_id = database.get_user_id('alice')
+    password_hash = database.get_user('alice')['password']
     assert user_id is not None
 
 def test_auth_missing_username_fails(client):
