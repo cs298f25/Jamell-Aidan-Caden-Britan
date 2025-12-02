@@ -15,9 +15,12 @@ pip install -r requirements.txt
 ### Run the app
 Runs the program on port 8000
 ```bash
-python3 app.py
+python3 -m src.app
 ```
 See the app running at **`http://localhost:8000/putendpointhere`**
 
 ## Cloud Deployment 
+
+
+
 

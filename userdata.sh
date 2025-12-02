@@ -7,6 +7,11 @@ chmod +x redeploy.sh
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cat << 'EOF' > .env
+AWS_DEFAULT_REGION=<region>
+BUCKET_NAME=<bucket-name>
+EOF
+chmod 600 .env
 cp image_hosting.service /etc/systemd/system
 systemctl enable image_hosting.service
 systemctl start image_hosting.service

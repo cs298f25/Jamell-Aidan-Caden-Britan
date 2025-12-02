@@ -17,7 +17,6 @@ const username = urlParams.get('username');
 const passwordFromUrl = urlParams.get('password');
 if (username && passwordFromUrl) {
     sessionStorage.setItem('username', username);
-
     // Remove password from the URL so it isn't exposed in the address bar or history
     const cleanUrl = new URL(window.location.href);
     cleanUrl.searchParams.delete('password');
@@ -27,14 +26,11 @@ if (username && passwordFromUrl) {
 // Load categories on page load
 async function loadCategories() {
     if (!username) return;
-    
     try {
         const response = await fetch(`/api/categories?username=${encodeURIComponent(username)}`);
         const categories = await response.json();
-        
         // Clear existing options except "Uncategorized"
         categorySelect.innerHTML = '<option value="uncategorized">Uncategorized</option>';
-        
         // Add categories from database
         categories.forEach(cat => {
             const option = document.createElement('option');
@@ -54,12 +50,10 @@ createCategoryBtn.onclick = async () => {
         showFeedback('Please enter a category name', 'error');
         return;
     }
-    
     if (!username) {
         showFeedback('Username is required', 'error');
         return;
     }
-    
     try {
         const response = await fetch('/api/categories', {
             method: 'POST',
