@@ -16,21 +16,27 @@ BUCKET_NAME = os.getenv('BUCKET_NAME')
 def auth():
     username = request.args.get('username', '').strip()
     password = request.args.get('password', '').strip()
+    
     if not username:
         abort(400, description="Username parameter is required")
-    if not password:
-        abort(400, description="Password parameter is required")
-
-    user = database.get_user(username)
-    if user is None:
-        # New user: create with hashed password
-        password_hash = generate_password_hash(password)
-        database.create_user(username, password_hash)
+    
+    # If password is provided, authenticate (create or verify)
+    if password:
+        user = database.get_user(username)
+        if user is None:
+            # New user: create with hashed password
+            password_hash = generate_password_hash(password)
+            database.create_user(username, password_hash)
+        else:
+            # Existing user: verify password
+            stored_hash = user.get('password') or ''
+            if not check_password_hash(stored_hash, password):
+                abort(401, description="Invalid username or password")
     else:
-        # Existing user: verify password
-        stored_hash = user.get('password') or ''
-        if not check_password_hash(stored_hash, password):
-            abort(401, description="Invalid username or password")
+        # No password provided - check if user exists (for returning to auth page)
+        user = database.get_user(username)
+        if user is None:
+            abort(404, description="User not found. Please log in with your password.")
 
     return render_template('authorization/index.html', username=username)
 

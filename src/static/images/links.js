@@ -44,7 +44,12 @@ async function renderLinks(container, template) {
 
 function preserveQueryParams() {
   const currentParams = new URLSearchParams(window.location.search);
-  const username = currentParams.get('username');
+  const username = currentParams.get('username') || sessionStorage.getItem('username');
+  
+  // Store username in sessionStorage if found in URL
+  if (currentParams.get('username')) {
+    sessionStorage.setItem('username', currentParams.get('username'));
+  }
   
   // Preserve username for main menu link
   const mainMenuLink = document.getElementById('main-menu-link');

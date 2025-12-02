@@ -7,10 +7,22 @@ const categorySelect = document.getElementById('category-select');
 const newCategoryInput = document.getElementById('new-category-input');
 const createCategoryBtn = document.getElementById('create-category-btn');
 const categoryFeedback = document.getElementById('category-feedback');
+const logoutBtn = document.querySelector('.logout-btn');
 
 // Get username from URL
 const urlParams = new URLSearchParams(window.location.search);
 const username = urlParams.get('username');
+
+// Store username in sessionStorage after successful login (when password was provided)
+const passwordFromUrl = urlParams.get('password');
+if (username && passwordFromUrl) {
+    sessionStorage.setItem('username', username);
+
+    // Remove password from the URL so it isn't exposed in the address bar or history
+    const cleanUrl = new URL(window.location.href);
+    cleanUrl.searchParams.delete('password');
+    window.history.replaceState({}, '', cleanUrl);
+}
 
 // Load categories on page load
 async function loadCategories() {
@@ -141,6 +153,10 @@ viewBtn.onclick = () => {
     
     // On second click, navigate to gallery
     const limit = limitInput.value.trim();
+    // Store username in sessionStorage for later use
+    if (username) {
+        sessionStorage.setItem('username', username);
+    }
     let url = `/gallery?username=${encodeURIComponent(username)}`;
     if (limit) {
         url += `&limit=${encodeURIComponent(limit)}`;
@@ -148,4 +164,11 @@ viewBtn.onclick = () => {
     window.location.href = url;
 };
 
+// Logout button - navigate back to login page and clear session
+if (logoutBtn) {
+    logoutBtn.onclick = () => {
+        sessionStorage.removeItem('username');
+        window.location.href = '/';
+    };
+}
 
