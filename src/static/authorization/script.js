@@ -144,7 +144,6 @@ viewBtn.onclick = () => {
         limitInput.style.display = 'block';
         return; // Show input first, wait for second click
     }
-    
     // On second click, navigate to gallery
     const limit = limitInput.value.trim();
     // Store username in sessionStorage for later use

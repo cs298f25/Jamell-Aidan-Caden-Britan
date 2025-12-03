@@ -16,10 +16,8 @@ BUCKET_NAME = os.getenv('BUCKET_NAME')
 def auth():
     username = request.args.get('username', '').strip()
     password = request.args.get('password', '').strip()
-    
     if not username:
         abort(400, description="Username parameter is required")
-    
     # If password is provided, authenticate (create or verify)
     if password:
         user = database.get_user(username)
