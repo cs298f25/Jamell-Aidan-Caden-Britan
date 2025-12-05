@@ -5,19 +5,21 @@ import dotenv
 import json
 
 dotenv.load_dotenv()
-REGION = os.getenv('REGION')
+REGION = os.getenv('REGION','us-east-1')
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 AWS_SESSION_TOKEN = os.getenv('AWS_SESSION_TOKEN')
 
 
 def get_client():
-    return boto3.client("s3",
-                        region_name=REGION,
-                        aws_access_key_id=AWS_ACCESS_KEY_ID,
-                        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-                        aws_session_token=AWS_SESSION_TOKEN)
-
+    kwargs = {"region_name": REGION}
+    if AWS_ACCESS_KEY_ID:
+        kwargs["aws_access_key_id"] = AWS_ACCESS_KEY_ID
+    if AWS_SECRET_ACCESS_KEY:
+        kwargs["aws_secret_access_key"] = AWS_SECRET_ACCESS_KEY
+    if AWS_SESSION_TOKEN:
+        kwargs["aws_session_token"] = AWS_SESSION_TOKEN
+    return boto3.client("s3", **kwargs)
 
 def create_bucket(bucket_name):
     s3 = get_client()

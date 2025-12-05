@@ -11,6 +11,18 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 BUCKET_NAME = os.getenv('BUCKET_NAME')
 
+def safe_init():
+    """Initialize database and S3 bucket only if they don't exist"""
+    if not os.path.exists(database.DB_NAME):
+        print(f"Database not found. Initializing at {database.DB_NAME}")
+        database.init_db()
+    else:
+        print(f"Database already exists at {database.DB_NAME}")
+    print(f"Ensuring bucket {BUCKET_NAME} exists...")
+    if storageAws.create_bucket(BUCKET_NAME):
+        storageAws.make_bucket_public(BUCKET_NAME)
+        print(f"Bucket {BUCKET_NAME} is ready")
+safe_init()
 
 @app.route('/auth')
 def auth():
@@ -124,17 +136,4 @@ def images_api():
 
 
 if __name__ == '__main__':
-    if os.path.exists(database.DB_NAME):
-        os.remove(database.DB_NAME)
-        print(f"Removed old database file: {database.DB_NAME}")
-
-    database.init_db()
-    storageAws.delete_bucket(BUCKET_NAME)
-    print(f"Deleted bucket {BUCKET_NAME}")
-
-    if storageAws.create_bucket(BUCKET_NAME):
-        print(f"Bucket {BUCKET_NAME} created")
-        storageAws.make_bucket_public(BUCKET_NAME)
-        print(f"Bucket {BUCKET_NAME} is now public")
-
-    app.run(port=8000, debug=True)
+    app.run(port=8000, debug=True, use_reloader=False)

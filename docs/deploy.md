@@ -28,7 +28,7 @@ BUCKET_NAME=<bucket-name>
 ### Run the app
 Runs the program on port 8000
 ```bash
-python3 -m src.app
+python3 src/app.py
 ```
 See the app running at **`http://localhost:8000/`**
 
@@ -82,7 +82,7 @@ See the app running at **`http://localhost:8000/`**
 
 1. Once the instance is running, note its **Public IPv4 address**
 2. Wait 2-3 minutes for the user data script to complete
-3. Access your application:
+3. Access your application
 
 
 
