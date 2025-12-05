@@ -9,7 +9,7 @@ from database import storageAws
 load_dotenv()
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-BUCKET_NAME = os.getenv('BUCKET_NAME')
+BUCKET_NAME = os.getenv('BUCKET_NAME','image-hosting-bucket')
 
 def safe_init():
     """Initialize database and S3 bucket only if they don't exist"""
