@@ -9,15 +9,21 @@ from database import storageAws
 load_dotenv()
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
-BUCKET_NAME = os.getenv('BUCKET_NAME','image-hosting-bucket')
+BUCKET_NAME = os.getenv('BUCKET_NAME')
 
 def safe_init():
     """Initialize database and S3 bucket only if they don't exist"""
+    is_testing = os.getenv('PYTEST_CURRENT_TEST') is not None
+
     if not os.path.exists(database.DB_NAME):
         print(f"Database not found. Initializing at {database.DB_NAME}")
         database.init_db()
     else:
         print(f"Database already exists at {database.DB_NAME}")
+
+    if is_testing:
+        print("Test environment detected. Skipping S3 initialization.")
+        return
     print(f"Ensuring bucket {BUCKET_NAME} exists...")
     if storageAws.create_bucket(BUCKET_NAME):
         storageAws.make_bucket_public(BUCKET_NAME)
