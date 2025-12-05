@@ -19,6 +19,10 @@ def safe_init():
         database.init_db()
     else:
         print(f"Database already exists at {database.DB_NAME}")
+
+    if not BUCKET_NAME:
+        print("BUCKET_NAME not set. Skipping S3 initialization.")
+        return
     print(f"Ensuring bucket {BUCKET_NAME} exists...")
     if storageAws.create_bucket(BUCKET_NAME):
         storageAws.make_bucket_public(BUCKET_NAME)
